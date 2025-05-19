@@ -1,0 +1,61 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}{{ lamp.brand }} - {{ lamp.article }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'catalog:lamp_list' %}">Каталог</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ lamp.brand }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">{{ lamp.brand }}</h1>
+        <h5 class="text-muted mb-4">Артикул: {{ lamp.article }}</h5>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Характеристики</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Тип лампы:</strong> {{ lamp.get_lamp_type_display }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Мощность:</strong> {{ lamp.power_watts }} Вт
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Цвет:</strong> {{ lamp.color }}
+                    </li>
+                    {% if lamp.height_cm %}
+                    <li class="list-group-item">
+                        <strong>Высота:</strong> {{ lamp.height_cm }} см
+                    </li>
+                    {% endif %}
+                    <li class="list-group-item">
+                        <strong>Поддержка диммера:</strong> 
+                        {% if lamp.has_dimmer %}Да{% else %}Нет{% endif %}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Цена:</strong> {{ lamp.price }} ₽
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        {% if lamp.description %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Описание</h5>
+                <p class="card-text">{{ lamp.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,178 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Каталог ламп{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Каталог ламп</h1>
+    </div>
+</div>
+
+<!-- Форма поиска и фильтрации -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <!-- Поиск -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="Поиск по артикулу, марке или описанию" 
+                                   value="{{ current_search }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="bi bi-search"></i> Поиск
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Фильтры -->
+                    <div class="col-md-2">
+                        <select class="form-select" name="lamp_type">
+                            <option value="">Все типы</option>
+                            {% for value, label in lamp_types %}
+                                <option value="{{ value }}" 
+                                        {% if current_lamp_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <select class="form-select" name="has_dimmer">
+                            <option value="">Все лампы</option>
+                            <option value="1" {% if current_has_dimmer == "1" %}selected{% endif %}>
+                                С диммером
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="min_power" 
+                               placeholder="Мин. мощность" value="{{ current_min_power }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="max_power" 
+                               placeholder="Макс. мощность" value="{{ current_max_power }}">
+                    </div>
+
+                    <!-- Сортировка -->
+                    <div class="col-md-3">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <select class="form-select" name="sort_by">
+                                    <option value="">Сортировка...</option>
+                                    {% for value, label in sort_fields %}
+                                        <option value="{{ value }}" 
+                                                {% if current_sort == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="sort_order">
+                                    <option value="asc" {% if current_sort_order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                                    <option value="desc" {% if current_sort_order == 'desc' %}selected{% endif %}>По убыванию</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Группировка -->
+                    <div class="col-md-3">
+                        <select class="form-select" name="group_by">
+                            <option value="">Группировка...</option>
+                            {% for value, label in group_fields %}
+                                <option value="{{ value }}" 
+                                        {% if current_group == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Применить фильтры</button>
+                        <a href="{% url 'catalog:lamp_list' %}" class="btn btn-secondary">Сбросить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Список ламп -->
+<div class="row">
+    {% if current_group %}
+        {% regroup lamps by get_current_group_display as grouped_lamps %}
+        {% for group in grouped_lamps %}
+            <div class="col-12 mb-3">
+                <h3>{{ group.grouper }}</h3>
+            </div>
+            {% for lamp in group.list %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ lamp.brand }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Артикул: {{ lamp.article }}</h6>
+                            <p class="card-text">
+                                Тип: {{ lamp.get_lamp_type_display }}<br>
+                                Мощность: {{ lamp.power_watts }} Вт<br>
+                                Цвет: {{ lamp.color }}
+                            </p>
+                            <a href="{% url 'catalog:lamp_detail' lamp.pk %}" class="btn btn-primary">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    {% else %}
+        {% for lamp in lamps %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ lamp.brand }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Артикул: {{ lamp.article }}</h6>
+                        <p class="card-text">
+                            Тип: {{ lamp.get_lamp_type_display }}<br>
+                            Мощность: {{ lamp.power_watts }} Вт<br>
+                            Цвет: {{ lamp.color }}
+                        </p>
+                        <a href="{% url 'catalog:lamp_detail' lamp.pk %}" class="btn btn-primary">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-center">Лампы не найдены. Попробуйте изменить параметры поиска.</p>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_lamp_type %}&lamp_type={{ current_lamp_type }}{% endif %}{% if current_has_dimmer %}&has_dimmer={{ current_has_dimmer }}{% endif %}{% if current_min_power %}&min_power={{ current_min_power }}{% endif %}{% if current_max_power %}&max_power={{ current_max_power }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}{% if current_group %}&group_by={{ current_group }}{% endif %}">Предыдущая</a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_lamp_type %}&lamp_type={{ current_lamp_type }}{% endif %}{% if current_has_dimmer %}&has_dimmer={{ current_has_dimmer }}{% endif %}{% if current_min_power %}&min_power={{ current_min_power }}{% endif %}{% if current_max_power %}&max_power={{ current_max_power }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}{% if current_group %}&group_by={{ current_group }}{% endif %}">Следующая</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %} 
