@@ -1,0 +1,82 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Корзина</h1>
+
+    {% if cart.items.exists %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Количество</th>
+                            <th>Цена за ед.</th>
+                            <th>Итого</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart.items.all %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'catalog:lamp_detail' item.lamp.id %}">
+                                    {{ item.lamp.brand }} ({{ item.lamp.article }})
+                                </a>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'catalog:update_cart_item' item.id %}" class="form-inline">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control form-control-sm" style="width: 70px">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary ml-2">✓</button>
+                                </form>
+                            </td>
+                            <td>{{ item.lamp.get_price_for_quantity.item.quantity }} ₽</td>
+                            <td>{{ item.get_total_price }} ₽</td>
+                            <td>
+                                <form method="post" action="{% url 'catalog:remove_from_cart' item.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>Итого:</strong></td>
+                            <td><strong>{{ cart.get_total_price }} ₽</strong></td>
+                            <td></td>
+                        </tr>
+                        {% if cart.get_total_price_with_discount != cart.get_total_price %}
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>Итого со скидкой:</strong></td>
+                            <td><strong>{{ cart.get_total_price_with_discount }} ₽</strong></td>
+                            <td></td>
+                        </tr>
+                        {% endif %}
+                    </tfoot>
+                </table>
+            </div>
+
+            {% if user.userprofile.role == 'sales_manager' %}
+            <div class="text-right mt-3">
+                <form method="post" action="{% url 'catalog:create_order' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Создать заказ</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Ваша корзина пуста. <a href="{% url 'catalog:lamp_list' %}">Перейти в каталог</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,10 +1,22 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
-from .models import Lamp
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib import messages
+from django.http import JsonResponse
+from .models import Lamp, Cart, CartItem, Order, UserProfile
 
 def about(request):
     return render(request, 'catalog/about.html')
+
+def has_role(role):
+    def check_role(user):
+        try:
+            return user.userprofile.role == role
+        except UserProfile.DoesNotExist:
+            return False
+    return check_role
 
 class LampListView(ListView):
     model = Lamp
@@ -97,3 +109,84 @@ class LampDetailView(DetailView):
     model = Lamp
     template_name = 'catalog/lamp_detail.html'
     context_object_name = 'lamp'
+
+@login_required
+def add_to_cart(request, lamp_id):
+    lamp = get_object_or_404(Lamp, id=lamp_id)
+    quantity = int(request.POST.get('quantity', 1))
+
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        lamp=lamp,
+        defaults={'quantity': quantity}
+    )
+    if not created:
+        cart_item.quantity += quantity
+        cart_item.save()
+    messages.success(request, 'Товар добавлен в корзину')
+    return redirect('catalog:lamp_detail', pk=lamp_id)
+
+@login_required
+def cart_detail(request):
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    return render(request, 'catalog/cart_detail.html', {'cart': cart})
+
+@login_required
+def update_cart_item(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    quantity = int(request.POST.get('quantity', 1))
+    
+    if quantity > 0:
+        cart_item.quantity = quantity
+        cart_item.save()
+    else:
+        cart_item.delete()
+    
+    return redirect('catalog:cart_detail')
+
+@login_required
+def remove_from_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    cart_item.delete()
+    messages.success(request, 'Товар удален из корзины')
+    return redirect('catalog:cart_detail')
+
+@login_required
+@user_passes_test(has_role('sales_manager'))
+def create_order(request):
+    cart = get_object_or_404(Cart, user=request.user)
+    if not cart.items.exists():
+        messages.error(request, 'Корзина пуста')
+        return redirect('catalog:cart_detail')
+    
+    order = Order.objects.create(cart=cart, sales_manager=request.user)
+    messages.success(request, 'Заказ успешно создан')
+    return redirect('catalog:order_detail', pk=order.id)
+
+@login_required
+def order_detail(request, pk):
+    order = get_object_or_404(Order, id=pk)
+    if not (request.user == order.sales_manager or request.user.userprofile.role == 'admin'):
+        messages.error(request, 'У вас нет доступа к этому заказу')
+        return redirect('catalog:lamp_list')
+    
+    return render(request, 'catalog/order_detail.html', {'order': order})
+
+@login_required
+@user_passes_test(has_role('admin'))
+def order_list(request):
+    orders = Order.objects.all().order_by('-created_at')
+    return render(request, 'catalog/order_list.html', {'orders': orders})
+
+@login_required
+@user_passes_test(has_role('merchandiser'))
+def edit_lamp_description(request, pk):
+    lamp = get_object_or_404(Lamp, id=pk)
+    if request.method == 'POST':
+        lamp.description = request.POST.get('description', '')
+        lamp.save()
+        messages.success(request, 'Описание товара обновлено')
+        return redirect('catalog:lamp_detail', pk=pk)
+    
+    return render(request, 'catalog/edit_lamp_description.html', {'lamp': lamp})

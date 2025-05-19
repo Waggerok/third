@@ -42,17 +42,46 @@
                         {% if lamp.has_dimmer %}Да{% else %}Нет{% endif %}
                     </li>
                     <li class="list-group-item">
-                        <strong>Цена:</strong> {{ lamp.price }} ₽
+                        <strong>Цена за единицу:</strong> {{ lamp.price }} ₽
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Цена мелкого опта:</strong> {{ lamp.small_wholesale_price }} ₽
+                        (от {{ lamp.small_wholesale_quantity }} шт.)
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Цена крупного опта:</strong> {{ lamp.large_wholesale_price }} ₽
+                        (от {{ lamp.large_wholesale_quantity }} шт.)
                     </li>
                 </ul>
             </div>
         </div>
 
         {% if lamp.description %}
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Описание</h5>
                 <p class="card-text">{{ lamp.description }}</p>
+                {% if user.is_authenticated and user.userprofile.role == 'merchandiser' %}
+                <a href="{% url 'catalog:edit_lamp_description' lamp.id %}" class="btn btn-primary">Редактировать описание</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        {% if user.is_authenticated %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Добавить в корзину</h5>
+                <form method="post" action="{% url 'catalog:add_to_cart' lamp.id %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="quantity">Количество:</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">В корзину</button>
+                </form>
             </div>
         </div>
         {% endif %}

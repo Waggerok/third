@@ -1,0 +1,52 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Список заказов{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Список заказов</h1>
+
+    {% if orders %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Дата</th>
+                            <th>Менеджер</th>
+                            <th>Статус</th>
+                            <th>Сумма</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>{{ order.sales_manager.get_full_name|default:order.sales_manager.username }}</td>
+                            <td>{{ order.get_status_display }}</td>
+                            <td>{{ order.get_total_price }} ₽</td>
+                            <td>
+                                <a href="{% url 'catalog:order_detail' order.id %}" class="btn btn-sm btn-primary">Просмотр</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Заказов пока нет.
+    </div>
+    {% endif %}
+
+    <div class="text-right mt-3">
+        <a href="{% url 'catalog:lamp_list' %}" class="btn btn-secondary">Вернуться в каталог</a>
+    </div>
+</div>
+{% endblock %} 

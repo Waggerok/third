@@ -1,0 +1,26 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Редактирование описания - {{ lamp.brand }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Редактирование описания</h1>
+    <h5 class="text-muted mb-4">{{ lamp.brand }} ({{ lamp.article }})</h5>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="description">Описание товара:</label>
+                    <textarea class="form-control" id="description" name="description" rows="10">{{ lamp.description }}</textarea>
+                </div>
+                <div class="text-right">
+                    <a href="{% url 'catalog:lamp_detail' lamp.id %}" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

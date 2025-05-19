@@ -1,0 +1,64 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Заказ #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Заказ #{{ order.id }}</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Информация о заказе</h5>
+                    <p><strong>Статус:</strong> {{ order.get_status_display }}</p>
+                    <p><strong>Создан:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Менеджер:</strong> {{ order.sales_manager.get_full_name|default:order.sales_manager.username }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Сумма заказа</h5>
+                    <p><strong>Итого:</strong> {{ order.cart.get_total_price }} ₽</p>
+                    {% if order.cart.get_total_price_with_discount != order.cart.get_total_price %}
+                    <p><strong>Итого со скидкой:</strong> {{ order.cart.get_total_price_with_discount }} ₽</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h5>Товары в заказе</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Количество</th>
+                            <th>Цена за ед.</th>
+                            <th>Итого</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.cart.items.all %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'catalog:lamp_detail' item.lamp.id %}">
+                                    {{ item.lamp.brand }} ({{ item.lamp.article }})
+                                </a>
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.lamp.get_price_for_quantity.item.quantity }} ₽</td>
+                            <td>{{ item.get_total_price }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-right">
+        <a href="{% url 'catalog:lamp_list' %}" class="btn btn-secondary">Вернуться в каталог</a>
+        {% if user.userprofile.role == 'admin' %}
+        <a href="{% url 'catalog:order_list' %}" class="btn btn-primary">К списку заказов</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
