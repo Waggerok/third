@@ -31,7 +31,7 @@ class Lamp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def get_price_for_quantity(self, quantity):
+    def get_price_for_quantity(self, quantity=1):
         if self.large_wholesale_price and self.large_wholesale_quantity and quantity >= self.large_wholesale_quantity:
             return self.large_wholesale_price
         elif self.small_wholesale_price and self.small_wholesale_quantity and quantity >= self.small_wholesale_quantity:

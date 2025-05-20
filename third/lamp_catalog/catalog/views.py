@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.http import JsonResponse
 from .models import Lamp, Cart, CartItem, Order, UserProfile
+from .forms import UserRegistrationForm
 
 def about(request):
     return render(request, 'catalog/about.html')
@@ -14,6 +15,14 @@ def has_role(role):
     def check_role(user):
         try:
             return user.userprofile.role == role
+        except UserProfile.DoesNotExist:
+            return False
+    return check_role
+
+def has_role_or_admin(roles):
+    def check_role(user):
+        try:
+            return user.userprofile.role in roles or user.userprofile.role == 'admin'
         except UserProfile.DoesNotExist:
             return False
     return check_role
@@ -174,13 +183,18 @@ def order_detail(request, pk):
     return render(request, 'catalog/order_detail.html', {'order': order})
 
 @login_required
-@user_passes_test(has_role('admin'))
 def order_list(request):
-    orders = Order.objects.all().order_by('-created_at')
+    if request.user.userprofile.role == 'admin':
+        orders = Order.objects.all().order_by('-created_at')
+    elif request.user.userprofile.role == 'sales_manager':
+        orders = Order.objects.filter(sales_manager=request.user).order_by('-created_at')
+    else:
+        messages.error(request, 'У вас нет доступа к списку заказов')
+        return redirect('catalog:lamp_list')
     return render(request, 'catalog/order_list.html', {'orders': orders})
 
 @login_required
-@user_passes_test(has_role('merchandiser'))
+@user_passes_test(has_role_or_admin(['merchandiser']))
 def edit_lamp_description(request, pk):
     lamp = get_object_or_404(Lamp, id=pk)
     if request.method == 'POST':
@@ -190,3 +204,56 @@ def edit_lamp_description(request, pk):
         return redirect('catalog:lamp_detail', pk=pk)
     
     return render(request, 'catalog/edit_lamp_description.html', {'lamp': lamp})
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Регистрация успешна! Теперь вы можете войти.')
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+@user_passes_test(has_role_or_admin(['merchandiser']))
+def merchandiser_product_list(request):
+    lamps = Lamp.objects.all().order_by('-created_at')
+    return render(request, 'catalog/merchandiser_product_list.html', {'lamps': lamps})
+
+@login_required
+@user_passes_test(has_role_or_admin(['merchandiser']))
+def edit_lamp(request, pk):
+    lamp = get_object_or_404(Lamp, id=pk)
+    if request.method == 'POST':
+        try:
+            lamp.brand = request.POST.get('brand', lamp.brand)
+            lamp.article = request.POST.get('article', lamp.article)
+            lamp.has_dimmer = request.POST.get('has_dimmer') == 'on'
+            lamp.power_watts = int(request.POST.get('power_watts', lamp.power_watts))
+            height_cm = request.POST.get('height_cm')
+            lamp.height_cm = int(height_cm) if height_cm else None
+            lamp.color = request.POST.get('color', lamp.color)
+            lamp.lamp_type = request.POST.get('lamp_type', lamp.lamp_type)
+            lamp.description = request.POST.get('description', lamp.description)
+            lamp.price = float(request.POST.get('price', lamp.price))
+            
+            small_wholesale_price = request.POST.get('small_wholesale_price')
+            lamp.small_wholesale_price = float(small_wholesale_price) if small_wholesale_price else None
+            
+            small_wholesale_quantity = request.POST.get('small_wholesale_quantity')
+            lamp.small_wholesale_quantity = int(small_wholesale_quantity) if small_wholesale_quantity else None
+            
+            large_wholesale_price = request.POST.get('large_wholesale_price')
+            lamp.large_wholesale_price = float(large_wholesale_price) if large_wholesale_price else None
+            
+            large_wholesale_quantity = request.POST.get('large_wholesale_quantity')
+            lamp.large_wholesale_quantity = int(large_wholesale_quantity) if large_wholesale_quantity else None
+            
+            lamp.save()
+            messages.success(request, 'Товар успешно обновлен')
+            return redirect('catalog:merchandiser_product_list')
+        except (ValueError, TypeError) as e:
+            messages.error(request, f'Ошибка при сохранении данных: {str(e)}')
+    return render(request, 'catalog/edit_lamp.html', {'lamp': lamp})

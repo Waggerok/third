@@ -125,5 +125,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
 LOGIN_REDIRECT_URL = 'catalog:lamp_list'
-LOGOUT_REDIRECT_URL = 'catalog:lamp_list'
+LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
