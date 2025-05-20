@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 
 class LampType(models.Model):
@@ -84,10 +85,10 @@ class Cart(models.Model):
     
     def get_total_price_with_discount(self):
         total = self.get_total_price()
-        if total >= 100000:  # 10% discount for orders over 100,000
-            return total * 0.9
-        elif total >= 50000:  # 5% discount for orders over 50,000
-            return total * 0.95
+        if total >= Decimal('100000'):  # 10% discount for orders over 100,000
+            return round(total * Decimal('0.9'), 2)
+        elif total >= Decimal('50000'):  # 5% discount for orders over 50,000
+            return round(total * Decimal('0.95'), 2)
         return total
 
 class CartItem(models.Model):

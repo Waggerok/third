@@ -162,14 +162,22 @@ def remove_from_cart(request, item_id):
     return redirect('catalog:cart_detail')
 
 @login_required
-@user_passes_test(has_role('sales_manager'))
+@user_passes_test(lambda u: u.userprofile.role in ['sales_manager', 'admin'])
 def create_order(request):
     cart = get_object_or_404(Cart, user=request.user)
     if not cart.items.exists():
         messages.error(request, 'Корзина пуста')
         return redirect('catalog:cart_detail')
     
+    # Создаем заказ
     order = Order.objects.create(cart=cart, sales_manager=request.user)
+    
+    # Создаем новую корзину для пользователя
+    new_cart = Cart.objects.create(user=request.user)
+    
+    # Удаляем старую корзину
+    cart.delete()
+    
     messages.success(request, 'Заказ успешно создан')
     return redirect('catalog:order_detail', pk=order.id)
 

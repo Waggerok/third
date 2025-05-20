@@ -63,7 +63,7 @@
                 </table>
             </div>
 
-            {% if user.userprofile.role == 'sales_manager' %}
+            {% if user.userprofile.role == 'sales_manager' or user.userprofile.role == 'admin' %}
             <div class="text-right mt-3">
                 <form method="post" action="{% url 'catalog:create_order' %}">
                     {% csrf_token %}
