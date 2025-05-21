@@ -86,9 +86,9 @@ class Cart(models.Model):
     def get_total_price_with_discount(self):
         total = self.get_total_price()
         if total >= Decimal('100000'):  # 10% discount for orders over 100,000
-            return round(total * Decimal('0.9'), 2)
+            return total * Decimal('0.9')
         elif total >= Decimal('50000'):  # 5% discount for orders over 50,000
-            return round(total * Decimal('0.95'), 2)
+            return total * Decimal('0.95')
         return total
 
 class CartItem(models.Model):

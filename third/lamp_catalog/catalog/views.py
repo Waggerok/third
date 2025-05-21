@@ -202,15 +202,17 @@ def order_list(request):
     return render(request, 'catalog/order_list.html', {'orders': orders})
 
 @login_required
-@user_passes_test(has_role_or_admin(['merchandiser']))
 def edit_lamp_description(request, pk):
     lamp = get_object_or_404(Lamp, id=pk)
+
     if request.method == 'POST':
+        if not (request.user.userprofile.role in ['merchandiser', 'admin']):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
         lamp.description = request.POST.get('description', '')
         lamp.save()
         messages.success(request, 'Описание товара обновлено')
         return redirect('catalog:lamp_detail', pk=pk)
-    
+
     return render(request, 'catalog/edit_lamp_description.html', {'lamp': lamp})
 
 def register(request):
