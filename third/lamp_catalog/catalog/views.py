@@ -175,8 +175,7 @@ def create_order(request):
     # Создаем новую корзину для пользователя
     new_cart = Cart.objects.create(user=request.user)
     
-    # Удаляем старую корзину
-    cart.delete()
+    Cart.objects.create(user=request.user)
     
     messages.success(request, 'Заказ успешно создан')
     return redirect('catalog:order_detail', pk=order.id)

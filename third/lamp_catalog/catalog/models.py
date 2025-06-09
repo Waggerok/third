@@ -107,12 +107,12 @@ class Order(models.Model):
         ('delivered', 'Доставлен'),
         ('cancelled', 'Отменен'),
     ]
-    
-    cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
+
+    cart = models.OneToOneField(Cart, on_delete=models.SET_NULL, null=True, blank=True)
     sales_manager = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def get_total_price(self):
-        return self.cart.get_total_price_with_discount()
+        return self.cart.get_total_price_with_discount() if self.cart else 0
